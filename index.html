@@ -63,6 +63,45 @@ table{width:100%;border-collapse:collapse}th,td{padding:10px 6px;border-bottom:1
 <div class="card" style="margin-top:16px"><button class="secondary" id="logout">Sign out</button></div>
 </div>
 
+
+<div class="card" style="margin-top:16px">
+  <h2>📊 Expense Dashboard</h2>
+
+  <div class="filters">
+    <select id="reportMonth"></select>
+    <select id="reportCategory">
+      <option value="">All Categories</option>
+    </select>
+  </div>
+
+  <div id="categoryReport"
+       style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-top:14px;">
+  </div>
+
+  <div style="margin-top:22px;">
+    <h3 style="font-size:15px;margin:0 0 10px;">Expense Breakdown</h3>
+    <canvas id="expenseChart"
+            width="900"
+            height="280"
+            style="width:100%;height:280px;"></canvas>
+  </div>
+
+  <div style="margin-top:22px;overflow:auto;">
+    <h3 style="font-size:15px;margin:0 0 10px;">Expense Report</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Category</th>
+          <th>Transactions</th>
+          <th>Total</th>
+          <th>% of Expenses</th>
+        </tr>
+      </thead>
+      <tbody id="reportTable"></tbody>
+    </table>
+  </div>
+</div>
+
 <div class="card">
 <h2>Transactions</h2>
 <div class="filters"><input id="search" placeholder="Search"><input id="filterMonth" type="month"></div>
