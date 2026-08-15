@@ -36,8 +36,6 @@ table{width:100%;border-collapse:collapse}th,td{padding:10px 6px;border-bottom:1
 <section class="grid">
 <div class="card"><div class="muted">This Month</div><div class="value" id="monthExp">$0</div></div>
 <div class="card"><div class="muted">Today</div><div class="value" id="todayExp">$0</div></div>
-<div class="card"><div class="muted">Income</div><div class="value" id="monthInc">$0</div></div>
-<div class="card"><div class="muted">Balance</div><div class="value" id="balance">$0</div></div>
 </section>
 
 <div class="layout">
@@ -196,9 +194,9 @@ $("reportCategory")?.addEventListener("change",renderExpenseDashboard);
 
 function render(){
  const m=$("filterMonth").value||ym,q=$("search").value.toLowerCase();
- let me=0,td=0,inc=0;
- rows.forEach(x=>{let a=+x.amount;if(x.date.startsWith(ym)){if(x.type==="expense")me+=a;else inc+=a}if(x.date===today&&x.type==="expense")td+=a});
- $("monthExp").textContent=money(me);$("todayExp").textContent=money(td);$("monthInc").textContent=money(inc);$("balance").textContent=money(inc-me);
+ let me=0,td=0;
+ rows.forEach(x=>{let a=+x.amount;if(x.date.startsWith(ym)){if(x.type==="expense")me+=a;}if(x.date===today&&x.type==="expense")td+=a});
+ $("monthExp").textContent=money(me);$("todayExp").textContent=money(td);
  let budget=+$("budget").value||0,p=budget?Math.min(100,me/budget*100):0;$("budgetBar").style.width=p+"%";$("budgetText").textContent=money(me)+" of "+money(budget)+" used ("+Math.round(p)+"%)";
  const filtered=rows.filter(x=>(!q||(x.description||"").toLowerCase().includes(q)||x.category.toLowerCase().includes(q))&&(!m||x.date.startsWith(m)));
  $("list").innerHTML=filtered.map(x=>`<tr><td>${x.date}</td><td>${esc(x.description||"-")}</td><td>${esc(x.category)}</td><td>${x.type}</td><td class="${x.type}">${x.type==="income"?"+":"-"}${money(x.amount)}</td><td><button class="danger" onclick="removeTx('${x.id}')">Delete</button></td></tr>`).join("");
