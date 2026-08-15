@@ -3,207 +3,252 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>My Cloud Expense Tracker</title>
+<title>My Expense Tracker</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-*{box-sizing:border-box}body{margin:0;background:#f5f7fb;color:#172033;font-family:system-ui,-apple-system,Segoe UI,sans-serif}
-header{background:#172554;color:white;padding:18px 16px}main{max-width:1100px;margin:auto;padding:16px}.wrap{max-width:1100px;margin:auto}
-h1{margin:0;font-size:24px}h2{font-size:18px;margin:0 0 14px}.muted{color:#667085;font-size:13px}
-.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.card{background:white;border:1px solid #e5e7eb;border-radius:14px;padding:16px;box-shadow:0 2px 8px #00000008}
-.value{font-size:23px;font-weight:800;margin-top:5px}.layout{display:grid;grid-template-columns:330px 1fr;gap:16px;margin-top:16px}
-label{font-size:12px;font-weight:700;display:block;margin:10px 0 5px}input,select,button{width:100%;padding:10px;border:1px solid #e5e7eb;border-radius:9px;font:inherit}button{background:#315efb;color:#fff;border:0;font-weight:700;cursor:pointer}
-.row{display:flex;gap:8px}.row>*{flex:1}.actions{display:flex;gap:8px;margin-top:10px}.secondary{background:#eef2ff;color:#2844a8}.danger{background:#fff1f0;color:#c5221f;border:1px solid #f3c2be;width:auto;padding:7px}
-table{width:100%;border-collapse:collapse}th,td{padding:10px 6px;border-bottom:1px solid #e5e7eb;text-align:left;font-size:13px}th{font-size:11px;color:#667085}.expense{color:#d92d20;font-weight:800}.income{color:#079455;font-weight:800}
-.auth{max-width:430px;margin:45px auto}.hidden{display:none}.filters{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
-.progress{height:9px;background:#eef2f6;border-radius:99px;overflow:hidden}.bar{height:100%;background:#315efb}.empty{text-align:center;padding:28px;color:#667085}
-@media(max-width:800px){.grid{grid-template-columns:1fr 1fr}.layout{grid-template-columns:1fr}}
-@media(max-width:500px){.grid{grid-template-columns:1fr 1fr}.row{display:block}.filters{grid-template-columns:1fr}main{padding:12px}}
+:root{--bg:#f5f7fb;--card:#fff;--text:#172033;--muted:#667085;--line:#e5e7eb;--primary:#315efb;--primary2:#6d3df5;--red:#d92d20;--green:#079455;--purple:#6d3df5}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif}
+header{background:linear-gradient(135deg,#101d3b,#202e68);color:#fff;padding:20px 18px}
+.wrap,main{max-width:1250px;margin:auto}
+h1{margin:0;font-size:25px}h2{font-size:17px;margin:0 0 14px}h3{font-size:14px;margin:0 0 10px}.muted{color:var(--muted);font-size:12px}
+main{padding:18px 16px}
+.topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.topbar p{margin:3px 0 0;color:var(--muted);font-size:13px}
+.btn{background:linear-gradient(135deg,var(--primary),var(--primary2));color:#fff;border:0;border-radius:9px;padding:11px 16px;font-weight:750;cursor:pointer}
+.grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:15px;padding:16px;box-shadow:0 3px 12px #00000008}
+.kpi{position:relative;overflow:hidden}.kpi .icon{position:absolute;right:14px;top:14px;width:34px;height:34px;border-radius:10px;background:#eef2ff;display:grid;place-items:center}
+.kpi .value{font-size:23px;font-weight:850;margin-top:6px}.trend{font-size:11px;margin-top:7px}.good{color:var(--green)}.bad{color:var(--red)}
+.layout{display:grid;grid-template-columns:330px 1fr;gap:16px;margin-top:16px}
+.row{display:flex;gap:8px}.row>*{flex:1}
+label{font-size:12px;font-weight:750;display:block;margin:9px 0 5px}
+input,select,textarea{width:100%;padding:10px;border:1px solid var(--line);border-radius:9px;font:inherit;background:#fff}textarea{min-height:65px;resize:vertical}
+.actions{display:flex;gap:8px;margin-top:11px}.actions>*{flex:1}
+.progress{height:9px;background:#edf0f5;border-radius:99px;overflow:hidden}.bar{height:100%;background:linear-gradient(90deg,var(--primary),var(--primary2));border-radius:99px}
+.budgetline{display:flex;justify-content:space-between;margin:7px 0 10px;font-size:12px;color:var(--muted)}
+.dashboard{display:grid;grid-template-columns:1.1fr 1fr;gap:14px}
+.chartbox{min-height:285px}canvas{width:100%;height:245px}
+.category-list{display:grid;gap:8px}.cat{display:grid;grid-template-columns:120px 1fr 70px;gap:8px;align-items:center;font-size:12px}.catbar{height:8px;background:#eef0f5;border-radius:99px;overflow:hidden}.catbar span{display:block;height:100%;background:linear-gradient(90deg,#315efb,#7a5cff)}
+.forecast{display:grid;grid-template-columns:1fr 1fr;gap:12px}.forecast .big{font-size:24px;font-weight:850;margin-top:5px}
+.insight{padding:10px;border-radius:10px;background:#f5f7ff;margin-top:8px;font-size:12px}
+.filters{display:grid;grid-template-columns:1fr 160px 170px;gap:8px;margin-bottom:12px}
+table{width:100%;border-collapse:collapse}th,td{padding:10px 7px;border-bottom:1px solid var(--line);text-align:left;font-size:12px}th{color:var(--muted);font-size:11px}.expense{color:var(--red);font-weight:800}.empty{text-align:center;color:var(--muted);padding:25px}
+.pill{display:inline-block;padding:4px 7px;border-radius:999px;background:#eef2ff;font-size:10px;font-weight:700}
+.auth{max-width:430px;margin:45px auto}.hidden{display:none}
+.smallgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:1050px){.grid{grid-template-columns:repeat(3,1fr)}.layout{grid-template-columns:1fr}}
+@media(max-width:760px){.grid{grid-template-columns:1fr 1fr}.dashboard{grid-template-columns:1fr}.filters{grid-template-columns:1fr}.topbar{align-items:flex-start;gap:10px}}
+@media(max-width:500px){.grid{grid-template-columns:1fr}.row{display:block}main{padding:12px}.cat{grid-template-columns:90px 1fr 62px}}
 </style>
 </head>
 <body>
-<header><div class="wrap"><h1>My Expense Tracker</h1><div id="userInfo" class="muted" style="color:#cbd5e1"></div></div></header>
+<header><div class="wrap">
+<h1>My Expense Tracker</h1>
+<div id="userInfo" style="font-size:12px;color:#cbd5e1"></div>
+</div></header>
 
 <div id="auth" class="auth card">
-<h2>Sign in</h2>
-<p class="muted">Your transactions will be stored securely in your cloud database.</p>
-<label>Email</label><input id="email" type="email" placeholder="you@example.com">
-<label>Password</label><input id="password" type="password" placeholder="Minimum 6 characters">
-<div class="actions"><button id="signup">Create account</button><button class="secondary" id="login">Sign in</button></div>
+<h2>Sign in</h2><p class="muted">Your expenses are stored in your Supabase cloud database.</p>
+<label>Email</label><input id="email" type="email">
+<label>Password</label><input id="password" type="password">
+<div class="actions"><button class="btn" id="signup">Create account</button><button class="btn" id="login">Sign in</button></div>
 <p id="authMsg" class="muted"></p>
 </div>
 
 <main id="app" class="hidden">
+<div class="topbar">
+<div><h2 style="margin:0">Financial Overview</h2><p>Track spending, budget and forecast for <span id="periodText"></span>.</p></div>
+<button class="btn" onclick="document.getElementById('description').focus()">＋ Add Expense</button>
+</div>
+
 <section class="grid">
-<div class="card"><div class="muted">This Month</div><div class="value" id="monthExp">$0</div></div>
-<div class="card"><div class="muted">Today</div><div class="value" id="todayExp">$0</div></div>
+<div class="card kpi"><div class="icon">💳</div><div class="muted">This Month</div><div class="value" id="monthExp">$0</div><div class="trend" id="monthTrend"></div></div>
+<div class="card kpi"><div class="icon">📅</div><div class="muted">Today</div><div class="value" id="todayExp">$0</div><div class="trend" id="dailyTrend"></div></div>
+<div class="card kpi"><div class="icon">🎯</div><div class="muted">Budget Left</div><div class="value" id="budgetLeft">$0</div><div class="trend" id="budgetTrend"></div></div>
+<div class="card kpi"><div class="icon">📈</div><div class="muted">Daily Average</div><div class="value" id="dailyAvg">$0</div><div class="trend">Based on current month</div></div>
+<div class="card kpi"><div class="icon">🔮</div><div class="muted">Forecast</div><div class="value" id="forecast">$0</div><div class="trend" id="forecastTrend"></div></div>
 </section>
 
 <div class="layout">
-<div>
+<aside>
 <div class="card">
 <h2>Monthly Budget</h2>
-<label>Budget</label><input id="budget" type="number" min="0" step=".01">
+<label>Budget Amount</label><input id="budget" type="number" min="0" step=".01">
 <div class="progress" style="margin-top:10px"><div id="budgetBar" class="bar" style="width:0%"></div></div>
-<p class="muted" id="budgetText"></p>
-<button id="saveBudget">Save Budget</button>
+<div class="budgetline"><span id="budgetUsed">$0 used</span><span id="budgetPct">0%</span></div>
+<button class="btn" id="saveBudget">Save Budget</button>
 </div>
 
 <div class="card" style="margin-top:16px">
-<h2>Add Transaction</h2>
+<h2>Add Expense</h2>
 <form id="form">
 <label>Date</label><input id="date" type="date" required>
-<div class="row"><div><label>Type</label><select id="type"><option value="expense">Expense</option><option value="income">Income</option></select></div><div><label>Amount</label><input id="amount" type="number" min=".01" step=".01" required></div></div>
-<label>Category</label><select id="category"><option>Food</option><option>Groceries</option><option>Transport</option><option>Housing</option><option>Utilities</option><option>Shopping</option><option>Entertainment</option><option>Health</option><option>Travel</option><option>Subscriptions</option><option>Salary</option><option>Other</option></select>
-<label>Description</label><input id="description" maxlength="100" placeholder="Lunch">
-<button style="margin-top:12px">Add</button>
+<div class="row"><div><label>Amount</label><input id="amount" type="number" min=".01" step=".01" required></div>
+<div><label>Category</label><select id="category"><option>Food</option><option>Groceries</option><option>Transport</option><option>Housing</option><option>Utilities</option><option>Shopping</option><option>Entertainment</option><option>Health</option><option>Travel</option><option>Subscriptions</option><option>Other</option></select></div></div>
+<div class="row"><div><label>Payment Method</label><select id="payment"><option>Debit Card</option><option>Credit Card</option><option>Cash</option><option>Bank Transfer</option><option>Other</option></select></div>
+<div><label>Recurring?</label><select id="recurring"><option>No</option><option>Yes</option></select></div></div>
+<label>Merchant / Description</label><input id="description" maxlength="100" placeholder="Walmart, Uber, Lunch...">
+<label>Notes</label><textarea id="notes" placeholder="Optional notes"></textarea>
+<button class="btn" style="margin-top:12px">Add Expense</button>
 </form>
 </div>
-<div class="card" style="margin-top:16px"><button class="secondary" id="logout">Sign out</button></div>
-</div>
-
 
 <div class="card" style="margin-top:16px">
-  <h2>📊 Expense Dashboard</h2>
+<h2>Forecast Settings</h2>
+<div class="smallgrid">
+<div><label>Expected Monthly Increase %</label><input id="growth" type="number" step=".1" value="0"></div>
+<div><label>Target Savings %</label><input id="savingsTarget" type="number" step=".1" value="20"></div>
+</div>
+<p class="muted">Forecast uses current daily spending, days remaining, and your expected increase.</p>
+</div>
+<div class="card" style="margin-top:16px"><button class="btn" id="logout">Sign out</button></div>
+</aside>
 
-  <div class="filters">
-    <select id="reportMonth"></select>
-    <select id="reportCategory">
-      <option value="">All Categories</option>
-    </select>
-  </div>
-
-  <div id="categoryReport"
-       style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-top:14px;">
-  </div>
-
-  <div style="margin-top:22px;">
-    <h3 style="font-size:15px;margin:0 0 10px;">Expense Breakdown</h3>
-    <canvas id="expenseChart"
-            width="900"
-            height="280"
-            style="width:100%;height:280px;"></canvas>
-  </div>
-
-  <div style="margin-top:22px;overflow:auto;">
-    <h3 style="font-size:15px;margin:0 0 10px;">Expense Report</h3>
-    <table>
-      <thead>
-        <tr>
-          <th>Category</th>
-          <th>Transactions</th>
-          <th>Total</th>
-          <th>% of Expenses</th>
-        </tr>
-      </thead>
-      <tbody id="reportTable"></tbody>
-    </table>
-  </div>
+<section>
+<div class="dashboard">
+<div class="card chartbox"><h2>Expense Overview</h2><div class="row" style="margin-bottom:8px"><select id="filterMonth"></select><select id="filterCategory"><option value="">All Categories</option></select></div><canvas id="trendChart" width="900" height="250"></canvas></div>
+<div class="card"><h2>Spending by Category</h2><div id="categoryList" class="category-list"></div></div>
 </div>
 
-<div class="card">
-<h2>Transactions</h2>
-<div class="filters"><input id="search" placeholder="Search"><input id="filterMonth" type="month"></div>
-<div style="overflow:auto"><table><thead><tr><th>Date</th><th>Description</th><th>Category</th><th>Type</th><th>Amount</th><th></th></tr></thead><tbody id="list"></tbody></table><div id="empty" class="empty">No transactions.</div></div>
+<div class="dashboard" style="margin-top:14px">
+<div class="card"><h2>🔮 Expense Forecast</h2><div class="forecast"><div><div class="muted">Predicted Monthly Total</div><div class="big" id="forecast2">$0</div><div class="muted" id="forecastVsBudget"></div></div><div><div class="muted">Projected Daily Average</div><div class="big" id="projectedDaily">$0</div><div class="muted" id="daysRemaining"></div></div></div><div id="forecastInsight" class="insight"></div></div>
+<div class="card"><h2>💡 Spending Insights</h2><div id="insights"></div></div>
 </div>
+
+<div class="card" style="margin-top:14px">
+<h2>Recent Expenses</h2>
+<div class="filters"><input id="search" placeholder="Search expenses"><select id="tableCategory"><option value="">All Categories</option></select><button class="btn" id="export">Export CSV</button></div>
+<div style="overflow:auto"><table><thead><tr><th>Date</th><th>Description</th><th>Category</th><th>Payment</th><th>Recurring</th><th>Amount</th><th></th></tr></thead><tbody id="list"></tbody></table><div id="empty" class="empty">No expenses found.</div></div>
+</div>
+</section>
 </div>
 </main>
 
 <script>
-/* Paste your Supabase Project URL and anon/publishable key below. */
 const SUPABASE_URL="https://lkwpbcicjtlnbhxpxmqf.supabase.co";
 const SUPABASE_KEY="sb_publishable_GVxyipcl_VtANLU_GaviFQ_qOxeVnM5";
 const db=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
-const $=id=>document.getElementById(id), today=new Date().toISOString().slice(0,10), ym=today.slice(0,7);
+const $=id=>document.getElementById(id);
+const today=new Date().toISOString().slice(0,10), ym=today.slice(0,7);
 const money=n=>new Intl.NumberFormat("en-CA",{style:"currency",currency:"CAD"}).format(+n||0);
-let currentUser=null, rows=[];
+let currentUser=null,rows=[],settings={budget:5000,growth:0,savingsTarget:20};
 
-$("date").value=today;$("filterMonth").value=ym;
+$("date").value=today;
 
 async function auth(action){
  const email=$("email").value.trim(),password=$("password").value;
  if(!email||password.length<6){$("authMsg").textContent="Enter a valid email and a password of at least 6 characters.";return}
- let r=action==="signup"?await db.auth.signUp({email,password}):await db.auth.signInWithPassword({email,password});
+ const r=action==="signup"?await db.auth.signUp({email,password}):await db.auth.signInWithPassword({email,password});
  if(r.error){$("authMsg").textContent=r.error.message;return}
  $("authMsg").textContent=action==="signup"?"Account created. Check your email if confirmation is enabled.":"";
 }
-$("signup").onclick=()=>auth("signup");$("login").onclick=()=>auth("login");
-$("logout").onclick=()=>db.auth.signOut();
+$("signup").onclick=()=>auth("signup");$("login").onclick=()=>auth("login");$("logout").onclick=()=>db.auth.signOut();
 
-db.auth.onAuthStateChange(async(_event,session)=>{
+db.auth.onAuthStateChange(async(_,session)=>{
  currentUser=session?.user||null;
  $("auth").classList.toggle("hidden",!!currentUser);$("app").classList.toggle("hidden",!currentUser);
  if(currentUser){$("userInfo").textContent=currentUser.email;await loadSettings();await loadRows()}
- else $("userInfo").textContent="";
 });
 
 async function loadRows(){
  const {data,error}=await db.from("transactions").select("*").eq("user_id",currentUser.id).order("date",{ascending:false}).order("created_at",{ascending:false});
- if(error){alert(error.message);return}rows=data||[];render();
+ if(error){alert(error.message);return}rows=data||[];populateMonths();render();
 }
 async function loadSettings(){
  const {data}=await db.from("profiles").select("budget").eq("id",currentUser.id).maybeSingle();
- $("budget").value=data?.budget||5000;
+ settings.budget=data?.budget||5000;$("budget").value=settings.budget;
+ const local=JSON.parse(localStorage.getItem("expense-ui-settings")||"{}");
+ settings.growth=+local.growth||0;settings.savingsTarget=+local.savingsTarget||20;
+ $("growth").value=settings.growth;$("savingsTarget").value=settings.savingsTarget;
 }
 async function saveSettings(){
  const budget=+$("budget").value||0;
  const {error}=await db.from("profiles").upsert({id:currentUser.id,budget});
- if(error)alert(error.message);else render();
+ if(error)alert(error.message);else{settings.budget=budget;render()}
 }
 $("saveBudget").onclick=saveSettings;
+["growth","savingsTarget"].forEach(id=>$("growth").addEventListener("input",saveForecastPrefs));
+function saveForecastPrefs(){
+ settings.growth=+$("growth").value||0;settings.savingsTarget=+$("savingsTarget").value||0;
+ localStorage.setItem("expense-ui-settings",JSON.stringify({growth:settings.growth,savingsTarget:settings.savingsTarget}));render();
+}
 
 $("form").onsubmit=async e=>{
  e.preventDefault();
- const item={user_id:currentUser.id,date:$("date").value,type:$("type").value,amount:+$("amount").value,category:$("category").value,description:$("description").value.trim()};
+ // The existing Supabase schema is preserved. Payment/recurring/notes are
+ // packed into description so this file works with the existing database.
+ const desc=[$("description").value.trim(),$("payment").value,$("recurring").value==="Yes"?"Recurring":"",$("notes").value.trim()].filter(Boolean).join(" • ");
+ const item={user_id:currentUser.id,date:$("date").value,type:"expense",amount:+$("amount").value,category:$("category").value,description:desc};
  const {error}=await db.from("transactions").insert(item);
  if(error){alert(error.message);return}
- $("amount").value="";$("description").value="";await loadRows();
+ $("amount").value="";$("description").value="";$("notes").value="";$("recurring").value="No";await loadRows();
 };
 
-async function removeTx(id){if(!confirm("Delete this transaction?"))return;const {error}=await db.from("transactions").delete().eq("id",id).eq("user_id",currentUser.id);if(error)alert(error.message);else loadRows()}
+async function removeTx(id){if(!confirm("Delete this expense?"))return;const {error}=await db.from("transactions").delete().eq("id",id).eq("user_id",currentUser.id);if(error)alert(error.message);else loadRows()}
 window.removeTx=removeTx;
-$("search").oninput=render;$("filterMonth").oninput=render;
 
-
-function renderExpenseDashboard(){
- const ms=$("reportMonth"), cs=$("reportCategory");
- if(!ms||!cs)return;
- const months=[...new Set(rows.map(x=>x.date.slice(0,7)))].sort().reverse();
- const oldMonth=ms.value||ym;
- ms.innerHTML=months.map(m=>`<option value="${m}">${m}</option>`).join("");
- ms.value=months.includes(oldMonth)?oldMonth:(months[0]||ym);
- const cats=[...new Set(rows.filter(x=>x.type==="expense").map(x=>x.category))].sort();
- const oldCat=cs.value;
- cs.innerHTML='<option value="">All Categories</option>'+cats.map(c=>`<option>${esc(c)}</option>`).join("");
- cs.value=cats.includes(oldCat)?oldCat:"";
- const expenses=rows.filter(x=>x.type==="expense"&&x.date.startsWith(ms.value)&&(!cs.value||x.category===cs.value));
- const totals={},counts={};let grand=0;
- expenses.forEach(x=>{const a=+x.amount||0;totals[x.category]=(totals[x.category]||0)+a;counts[x.category]=(counts[x.category]||0)+1;grand+=a});
- const entries=Object.entries(totals).sort((a,b)=>b[1]-a[1]);
- $("categoryReport").innerHTML=entries.map(([c,t])=>`<div class="card" style="padding:13px"><div class="muted">${esc(c)}</div><div style="font-size:19px;font-weight:800">${money(t)}</div><div class="muted">${counts[c]} transaction${counts[c]===1?"":"s"}</div></div>`).join("")||'<div class="empty">No expenses for this month.</div>';
- $("reportTable").innerHTML=entries.map(([c,t])=>`<tr><td>${esc(c)}</td><td>${counts[c]}</td><td class="expense">${money(t)}</td><td>${grand?(t/grand*100).toFixed(1):"0.0"}%</td></tr>`).join("");
- drawExpenseChart(entries);
+function populateMonths(){
+ const months=[...new Set(rows.map(x=>x.date.slice(0,7)))];if(!months.includes(ym))months.push(ym);months.sort().reverse();
+ const old=$("filterMonth").value||ym;$("filterMonth").innerHTML=months.map(m=>`<option value="${m}">${m}</option>`).join("");$("filterMonth").value=months.includes(old)?old:ym;
 }
-function drawExpenseChart(entries){
- const c=$("expenseChart");if(!c)return;const ctx=c.getContext("2d"),w=c.width,h=c.height;ctx.clearRect(0,0,w,h);
- if(!entries.length){ctx.fillStyle="#667085";ctx.font="14px Arial";ctx.fillText("Add expenses to see the category report.",20,35);return}
- const max=Math.max(...entries.map(e=>e[1]),1),left=150,top=20,row=30;ctx.font="12px Arial";
- entries.slice(0,8).forEach(([cat,total],i)=>{const y=top+i*row,bw=(w-left-30)*(total/max);ctx.fillStyle="#315efb";ctx.fillRect(left,y,bw,18);ctx.fillStyle="#172033";ctx.fillText(cat.slice(0,20),10,y+13);ctx.fillText(money(total),Math.min(left+bw+6,w-85),y+13)});
-}
-$("reportMonth")?.addEventListener("change",renderExpenseDashboard);
-$("reportCategory")?.addEventListener("change",renderExpenseDashboard);
+$("filterMonth").onchange=render;$("filterCategory").onchange=render;$("tableCategory").onchange=render;$("search").oninput=render;
 
 function render(){
- const m=$("filterMonth").value||ym,q=$("search").value.toLowerCase();
- let me=0,td=0;
- rows.forEach(x=>{let a=+x.amount;if(x.date.startsWith(ym)){if(x.type==="expense")me+=a;}if(x.date===today&&x.type==="expense")td+=a});
- $("monthExp").textContent=money(me);$("todayExp").textContent=money(td);
- let budget=+$("budget").value||0,p=budget?Math.min(100,me/budget*100):0;$("budgetBar").style.width=p+"%";$("budgetText").textContent=money(me)+" of "+money(budget)+" used ("+Math.round(p)+"%)";
- const filtered=rows.filter(x=>(!q||(x.description||"").toLowerCase().includes(q)||x.category.toLowerCase().includes(q))&&(!m||x.date.startsWith(m)));
- $("list").innerHTML=filtered.map(x=>`<tr><td>${x.date}</td><td>${esc(x.description||"-")}</td><td>${esc(x.category)}</td><td>${x.type}</td><td class="${x.type}">${x.type==="income"?"+":"-"}${money(x.amount)}</td><td><button class="danger" onclick="removeTx('${x.id}')">Delete</button></td></tr>`).join("");
+ const m=$("filterMonth").value||ym,q=$("search").value.toLowerCase(),cat=$("filterCategory").value;
+ const monthRows=rows.filter(x=>x.date.startsWith(m)&&x.type==="expense");
+ const filtered=rows.filter(x=>x.type==="expense"&&(!q||(x.description||"").toLowerCase().includes(q)||x.category.toLowerCase().includes(q))&&(!$("tableCategory").value||x.category===$("tableCategory").value)&&x.date.startsWith(m));
+ let total=0,todayTotal=0;monthRows.forEach(x=>{total+=+x.amount||0;if(x.date===today)todayTotal+=+x.amount||0});
+ const daysInMonth=new Date(+m.slice(0,4),+m.slice(5,7),0).getDate(),dayNum=(m===ym?new Date().getDate():daysInMonth),elapsed=Math.max(1,dayNum),remaining=Math.max(0,daysInMonth-elapsed);
+ const avg=total/elapsed,forecast=(total+avg*remaining)*(1+(settings.growth/100));
+ const left=settings.budget-total,pct=settings.budget?Math.min(100,total/settings.budget*100):0;
+ $("periodText").textContent=m;$("monthExp").textContent=money(total);$("todayExp").textContent=money(todayTotal);$("budgetLeft").textContent=money(left);$("dailyAvg").textContent=money(avg);$("forecast").textContent=money(forecast);
+ $("budgetBar").style.width=pct+"%";$("budgetUsed").textContent=money(total)+" used";$("budgetPct").textContent=Math.round(pct)+"%";
+ $("budgetTrend").textContent=left>=0?"Within budget":"Over budget";$("budgetTrend").className="trend "+(left>=0?"good":"bad");
+ $("forecastTrend").textContent=forecast<=settings.budget?"Projected under budget":"Projected over budget";$("forecastTrend").className="trend "+(forecast<=settings.budget?"good":"bad");
+ $("forecast2").textContent=money(forecast);$("projectedDaily").textContent=money(forecast/daysInMonth);$("daysRemaining").textContent=remaining+" days remaining";
+ $("forecastVsBudget").textContent=(forecast-settings.budget>=0?money(forecast-settings.budget)+" over budget":money(settings.budget-forecast)+" under budget");
+ $("forecastInsight").textContent=forecast>settings.budget?"⚠️ At the current pace, you may exceed your monthly budget. Consider reducing discretionary spending.":"✅ Your current pace projects within the monthly budget.";
+ renderCategories(monthRows,total);renderInsights(monthRows,total,avg,forecast);drawTrend(monthRows,forecast,daysInMonth,elapsed);
+ const cats=[...new Set(rows.filter(x=>x.type==="expense").map(x=>x.category))].sort();
+ $("filterCategory").innerHTML='<option value="">All Categories</option>'+cats.map(c=>`<option>${esc(c)}</option>`).join("");
+ $("tableCategory").innerHTML='<option value="">All Categories</option>'+cats.map(c=>`<option>${esc(c)}</option>`).join("");
+ $("list").innerHTML=filtered.map(x=>`<tr><td>${x.date}</td><td>${esc(x.description||"-")}</td><td><span class="pill">${esc(x.category)}</span></td><td>${extractPayment(x.description)}</td><td>${extractRecurring(x.description)}</td><td class="expense">-${money(x.amount)}</td><td><button class="btn" style="padding:6px 9px;font-size:11px" onclick="removeTx('${x.id}')">Delete</button></td></tr>`).join("");
  $("empty").style.display=filtered.length?"none":"block";
- renderExpenseDashboard();
 }
+
+function renderCategories(list,total){
+ const t={};list.forEach(x=>t[x.category]=(t[x.category]||0)+(+x.amount||0));
+ const e=Object.entries(t).sort((a,b)=>b[1]-a[1]);$("categoryList").innerHTML=e.map(([c,v])=>`<div class="cat"><span>${esc(c)}</span><div class="catbar"><span style="width:${total?v/total*100:0}%"></span></div><b>${money(v)}</b></div>`).join("")||'<div class="empty">No expenses this month.</div>';
+}
+function renderInsights(list,total,avg,forecast){
+ const cat={};list.forEach(x=>cat[x.category]=(cat[x.category]||0)+(+x.amount||0));const top=Object.entries(cat).sort((a,b)=>b[1]-a[1])[0];
+ const arr=[];if(top)arr.push(`🏠 <b>${esc(top[0])}</b> is your largest category at ${money(top[1])} (${(top[1]/total*100).toFixed(1)}% of expenses).`);
+ if(total>settings.budget)arr.push("🔴 You have already exceeded this month's budget.");else arr.push(`🟢 You have ${money(settings.budget-total)} remaining in your budget.`);
+ if(forecast>settings.budget)arr.push("📈 Forecast indicates you may exceed the budget if spending continues at the current pace.");
+ else arr.push("🎯 Current spending pace is tracking within budget.");
+ $("insights").innerHTML=arr.map(x=>`<div class="insight">${x}</div>`).join("");
+}
+function drawTrend(list,forecast,days,elapsed){
+ const c=$("trendChart"),ctx=c.getContext("2d"),w=c.width,h=c.height;ctx.clearRect(0,0,w,h);
+ const daily={};list.forEach(x=>{daily[x.date]=(daily[x.date]||0)+(+x.amount||0)});
+ const vals=[],labels=[];let run=0;for(let d=1;d<=days;d++){const date=new Date(+($("filterMonth").value||ym).slice(0,4),+($("filterMonth").value||ym).slice(5,7)-1,d).toISOString().slice(0,10);run+=daily[date]||0;vals.push(run);labels.push(d)}
+ const max=Math.max(...vals,forecast,1),left=45,right=15,top=15,bottom=30;
+ ctx.strokeStyle="#e5e7eb";ctx.lineWidth=1;for(let i=0;i<5;i++){const y=top+(h-top-bottom)*i/4;ctx.beginPath();ctx.moveTo(left,y);ctx.lineTo(w-right,y);ctx.stroke()}
+ const pts=vals.map((v,i)=>[left+(w-left-right)*i/(days-1||1),top+(h-top-bottom)*(1-v/max)]);
+ ctx.strokeStyle="#315efb";ctx.lineWidth=3;ctx.beginPath();pts.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));ctx.stroke();
+ if(elapsed<days){const y=top+(h-top-bottom)*(1-forecast/max);ctx.strokeStyle="#8b5cf6";ctx.setLineDash([6,5]);ctx.beginPath();ctx.moveTo(pts[Math.max(0,elapsed-1)][0],pts[Math.max(0,elapsed-1)][1]);ctx.lineTo(w-right,y);ctx.stroke();ctx.setLineDash([])}
+ ctx.fillStyle="#667085";ctx.font="11px Arial";ctx.fillText("$0",5,h-bottom+4);ctx.fillText(money(max),5,top+4);ctx.fillText("Actual",left, h-8);if(elapsed<days)ctx.fillText("Forecast",left+55,h-8);
+}
+function extractPayment(s){const a=(s||"").split(" • ");return a.find(x=>["Debit Card","Credit Card","Cash","Bank Transfer","Other"].includes(x))||"—"}
+function extractRecurring(s){return (s||"").includes("Recurring")?"Yes":"No"}
 function esc(s){return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
+
+$("export").onclick=()=>{
+ const m=$("filterMonth").value||ym;const data=rows.filter(x=>x.type==="expense"&&x.date.startsWith(m));
+ const csv="Date,Category,Description,Amount\n"+data.map(x=>[x.date,x.category,x.description||"",x.amount].map(v=>`"${String(v).replace(/"/g,'""')}"`).join(",")).join("\n");
+ const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));a.download=`expenses-${m}.csv`;a.click();
+};
 </script>
 </body>
 </html>
