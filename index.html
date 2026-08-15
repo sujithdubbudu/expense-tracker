@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>My Cloud Expense Tracker</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f5f7fb;color:#172033;font-family:system-ui,-apple-system,Segoe UI,sans-serif}
+header{background:#172554;color:white;padding:18px 16px}main{max-width:1100px;margin:auto;padding:16px}.wrap{max-width:1100px;margin:auto}
+h1{margin:0;font-size:24px}h2{font-size:18px;margin:0 0 14px}.muted{color:#667085;font-size:13px}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.card{background:white;border:1px solid #e5e7eb;border-radius:14px;padding:16px;box-shadow:0 2px 8px #00000008}
+.value{font-size:23px;font-weight:800;margin-top:5px}.layout{display:grid;grid-template-columns:330px 1fr;gap:16px;margin-top:16px}
+label{font-size:12px;font-weight:700;display:block;margin:10px 0 5px}input,select,button{width:100%;padding:10px;border:1px solid #e5e7eb;border-radius:9px;font:inherit}button{background:#315efb;color:#fff;border:0;font-weight:700;cursor:pointer}
+.row{display:flex;gap:8px}.row>*{flex:1}.actions{display:flex;gap:8px;margin-top:10px}.secondary{background:#eef2ff;color:#2844a8}.danger{background:#fff1f0;color:#c5221f;border:1px solid #f3c2be;width:auto;padding:7px}
+table{width:100%;border-collapse:collapse}th,td{padding:10px 6px;border-bottom:1px solid #e5e7eb;text-align:left;font-size:13px}th{font-size:11px;color:#667085}.expense{color:#d92d20;font-weight:800}.income{color:#079455;font-weight:800}
+.auth{max-width:430px;margin:45px auto}.hidden{display:none}.filters{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.progress{height:9px;background:#eef2f6;border-radius:99px;overflow:hidden}.bar{height:100%;background:#315efb}.empty{text-align:center;padding:28px;color:#667085}
+@media(max-width:800px){.grid{grid-template-columns:1fr 1fr}.layout{grid-template-columns:1fr}}
+@media(max-width:500px){.grid{grid-template-columns:1fr 1fr}.row{display:block}.filters{grid-template-columns:1fr}main{padding:12px}}
+</style>
+</head>
+<body>
+<header><div class="wrap"><h1>My Expense Tracker</h1><div id="userInfo" class="muted" style="color:#cbd5e1"></div></div></header>
+
+<div id="auth" class="auth card">
+<h2>Sign in</h2>
+<p class="muted">Your transactions will be stored securely in your cloud database.</p>
+<label>Email</label><input id="email" type="email" placeholder="you@example.com">
+<label>Password</label><input id="password" type="password" placeholder="Minimum 6 characters">
+<div class="actions"><button id="signup">Create account</button><button class="secondary" id="login">Sign in</button></div>
+<p id="authMsg" class="muted"></p>
+</div>
+
+<main id="app" class="hidden">
+<section class="grid">
+<div class="card"><div class="muted">This Month</div><div class="value" id="monthExp">$0</div></div>
+<div class="card"><div class="muted">Today</div><div class="value" id="todayExp">$0</div></div>
+<div class="card"><div class="muted">Income</div><div class="value" id="monthInc">$0</div></div>
+<div class="card"><div class="muted">Balance</div><div class="value" id="balance">$0</div></div>
+</section>
+
+<div class="layout">
+<div>
+<div class="card">
+<h2>Monthly Budget</h2>
+<label>Budget</label><input id="budget" type="number" min="0" step=".01">
+<div class="progress" style="margin-top:10px"><div id="budgetBar" class="bar" style="width:0%"></div></div>
+<p class="muted" id="budgetText"></p>
+<button id="saveBudget">Save Budget</button>
+</div>
+
+<div class="card" style="margin-top:16px">
+<h2>Add Transaction</h2>
+<form id="form">
+<label>Date</label><input id="date" type="date" required>
+<div class="row"><div><label>Type</label><select id="type"><option value="expense">Expense</option><option value="income">Income</option></select></div><div><label>Amount</label><input id="amount" type="number" min=".01" step=".01" required></div></div>
+<label>Category</label><select id="category"><option>Food</option><option>Groceries</option><option>Transport</option><option>Housing</option><option>Utilities</option><option>Shopping</option><option>Entertainment</option><option>Health</option><option>Travel</option><option>Subscriptions</option><option>Salary</option><option>Other</option></select>
+<label>Description</label><input id="description" maxlength="100" placeholder="Lunch">
+<button style="margin-top:12px">Add</button>
+</form>
+</div>
+<div class="card" style="margin-top:16px"><button class="secondary" id="logout">Sign out</button></div>
+</div>
+
+<div class="card">
+<h2>Transactions</h2>
+<div class="filters"><input id="search" placeholder="Search"><input id="filterMonth" type="month"></div>
+<div style="overflow:auto"><table><thead><tr><th>Date</th><th>Description</th><th>Category</th><th>Type</th><th>Amount</th><th></th></tr></thead><tbody id="list"></tbody></table><div id="empty" class="empty">No transactions.</div></div>
+</div>
+</div>
+</main>
+
+<script>
+/* Paste your Supabase Project URL and anon/publishable key below. */
+const SUPABASE_URL="https://lkwpbcicjtlnbhxpxmqf.supabase.co";
+const SUPABASE_KEY="sb_publishable_GVxyipcl_VtANLU_GaviFQ_qOxeVnM5";
+const db=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const $=id=>document.getElementById(id), today=new Date().toISOString().slice(0,10), ym=today.slice(0,7);
+const money=n=>new Intl.NumberFormat("en-CA",{style:"currency",currency:"CAD"}).format(+n||0);
+let currentUser=null, rows=[];
+
+$("date").value=today;$("filterMonth").value=ym;
+
+async function auth(action){
+ const email=$("email").value.trim(),password=$("password").value;
+ if(!email||password.length<6){$("authMsg").textContent="Enter a valid email and a password of at least 6 characters.";return}
+ let r=action==="signup"?await db.auth.signUp({email,password}):await db.auth.signInWithPassword({email,password});
+ if(r.error){$("authMsg").textContent=r.error.message;return}
+ $("authMsg").textContent=action==="signup"?"Account created. Check your email if confirmation is enabled.":"";
+}
+$("signup").onclick=()=>auth("signup");$("login").onclick=()=>auth("login");
+$("logout").onclick=()=>db.auth.signOut();
+
+db.auth.onAuthStateChange(async(_event,session)=>{
+ currentUser=session?.user||null;
+ $("auth").classList.toggle("hidden",!!currentUser);$("app").classList.toggle("hidden",!currentUser);
+ if(currentUser){$("userInfo").textContent=currentUser.email;await loadSettings();await loadRows()}
+ else $("userInfo").textContent="";
+});
+
+async function loadRows(){
+ const {data,error}=await db.from("transactions").select("*").eq("user_id",currentUser.id).order("date",{ascending:false}).order("created_at",{ascending:false});
+ if(error){alert(error.message);return}rows=data||[];render();
+}
+async function loadSettings(){
+ const {data}=await db.from("profiles").select("budget").eq("id",currentUser.id).maybeSingle();
+ $("budget").value=data?.budget||5000;
+}
+async function saveSettings(){
+ const budget=+$("budget").value||0;
+ const {error}=await db.from("profiles").upsert({id:currentUser.id,budget});
+ if(error)alert(error.message);else render();
+}
+$("saveBudget").onclick=saveSettings;
+
+$("form").onsubmit=async e=>{
+ e.preventDefault();
+ const item={user_id:currentUser.id,date:$("date").value,type:$("type").value,amount:+$("amount").value,category:$("category").value,description:$("description").value.trim()};
+ const {error}=await db.from("transactions").insert(item);
+ if(error){alert(error.message);return}
+ $("amount").value="";$("description").value="";await loadRows();
+};
+
+async function removeTx(id){if(!confirm("Delete this transaction?"))return;const {error}=await db.from("transactions").delete().eq("id",id).eq("user_id",currentUser.id);if(error)alert(error.message);else loadRows()}
+window.removeTx=removeTx;
+$("search").oninput=render;$("filterMonth").oninput=render;
+
+function render(){
+ const m=$("filterMonth").value||ym,q=$("search").value.toLowerCase();
+ let me=0,td=0,inc=0;
+ rows.forEach(x=>{let a=+x.amount;if(x.date.startsWith(ym)){if(x.type==="expense")me+=a;else inc+=a}if(x.date===today&&x.type==="expense")td+=a});
+ $("monthExp").textContent=money(me);$("todayExp").textContent=money(td);$("monthInc").textContent=money(inc);$("balance").textContent=money(inc-me);
+ let budget=+$("budget").value||0,p=budget?Math.min(100,me/budget*100):0;$("budgetBar").style.width=p+"%";$("budgetText").textContent=money(me)+" of "+money(budget)+" used ("+Math.round(p)+"%)";
+ const filtered=rows.filter(x=>(!q||(x.description||"").toLowerCase().includes(q)||x.category.toLowerCase().includes(q))&&(!m||x.date.startsWith(m)));
+ $("list").innerHTML=filtered.map(x=>`<tr><td>${x.date}</td><td>${esc(x.description||"-")}</td><td>${esc(x.category)}</td><td>${x.type}</td><td class="${x.type}">${x.type==="income"?"+":"-"}${money(x.amount)}</td><td><button class="danger" onclick="removeTx('${x.id}')">Delete</button></td></tr>`).join("");
+ $("empty").style.display=filtered.length?"none":"block";
+}
+function esc(s){return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
+</script>
+</body>
+</html>
