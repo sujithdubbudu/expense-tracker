@@ -126,6 +126,35 @@ async function removeTx(id){if(!confirm("Delete this transaction?"))return;const
 window.removeTx=removeTx;
 $("search").oninput=render;$("filterMonth").oninput=render;
 
+
+function renderExpenseDashboard(){
+ const ms=$("reportMonth"), cs=$("reportCategory");
+ if(!ms||!cs)return;
+ const months=[...new Set(rows.map(x=>x.date.slice(0,7)))].sort().reverse();
+ const oldMonth=ms.value||ym;
+ ms.innerHTML=months.map(m=>`<option value="${m}">${m}</option>`).join("");
+ ms.value=months.includes(oldMonth)?oldMonth:(months[0]||ym);
+ const cats=[...new Set(rows.filter(x=>x.type==="expense").map(x=>x.category))].sort();
+ const oldCat=cs.value;
+ cs.innerHTML='<option value="">All Categories</option>'+cats.map(c=>`<option>${esc(c)}</option>`).join("");
+ cs.value=cats.includes(oldCat)?oldCat:"";
+ const expenses=rows.filter(x=>x.type==="expense"&&x.date.startsWith(ms.value)&&(!cs.value||x.category===cs.value));
+ const totals={},counts={};let grand=0;
+ expenses.forEach(x=>{const a=+x.amount||0;totals[x.category]=(totals[x.category]||0)+a;counts[x.category]=(counts[x.category]||0)+1;grand+=a});
+ const entries=Object.entries(totals).sort((a,b)=>b[1]-a[1]);
+ $("categoryReport").innerHTML=entries.map(([c,t])=>`<div class="card" style="padding:13px"><div class="muted">${esc(c)}</div><div style="font-size:19px;font-weight:800">${money(t)}</div><div class="muted">${counts[c]} transaction${counts[c]===1?"":"s"}</div></div>`).join("")||'<div class="empty">No expenses for this month.</div>';
+ $("reportTable").innerHTML=entries.map(([c,t])=>`<tr><td>${esc(c)}</td><td>${counts[c]}</td><td class="expense">${money(t)}</td><td>${grand?(t/grand*100).toFixed(1):"0.0"}%</td></tr>`).join("");
+ drawExpenseChart(entries);
+}
+function drawExpenseChart(entries){
+ const c=$("expenseChart");if(!c)return;const ctx=c.getContext("2d"),w=c.width,h=c.height;ctx.clearRect(0,0,w,h);
+ if(!entries.length){ctx.fillStyle="#667085";ctx.font="14px Arial";ctx.fillText("Add expenses to see the category report.",20,35);return}
+ const max=Math.max(...entries.map(e=>e[1]),1),left=150,top=20,row=30;ctx.font="12px Arial";
+ entries.slice(0,8).forEach(([cat,total],i)=>{const y=top+i*row,bw=(w-left-30)*(total/max);ctx.fillStyle="#315efb";ctx.fillRect(left,y,bw,18);ctx.fillStyle="#172033";ctx.fillText(cat.slice(0,20),10,y+13);ctx.fillText(money(total),Math.min(left+bw+6,w-85),y+13)});
+}
+$("reportMonth")?.addEventListener("change",renderExpenseDashboard);
+$("reportCategory")?.addEventListener("change",renderExpenseDashboard);
+
 function render(){
  const m=$("filterMonth").value||ym,q=$("search").value.toLowerCase();
  let me=0,td=0,inc=0;
@@ -135,6 +164,7 @@ function render(){
  const filtered=rows.filter(x=>(!q||(x.description||"").toLowerCase().includes(q)||x.category.toLowerCase().includes(q))&&(!m||x.date.startsWith(m)));
  $("list").innerHTML=filtered.map(x=>`<tr><td>${x.date}</td><td>${esc(x.description||"-")}</td><td>${esc(x.category)}</td><td>${x.type}</td><td class="${x.type}">${x.type==="income"?"+":"-"}${money(x.amount)}</td><td><button class="danger" onclick="removeTx('${x.id}')">Delete</button></td></tr>`).join("");
  $("empty").style.display=filtered.length?"none":"block";
+ renderExpenseDashboard();
 }
 function esc(s){return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
 </script>
